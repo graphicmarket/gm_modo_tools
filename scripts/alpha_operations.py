@@ -2,26 +2,33 @@
 
 import modo
 import lx
+from slugify import slugify
 
 # lx.trace( True )
 scene = modo.Scene()
 selectedTargetMask = []
 exportableMeshes = []
 
-# Filter Selection by type
+
 def getSelectedItemsByType(type):
+    """ 
+        Filter Selection by type 
+    """
     return filter(lambda item: item.type == type, scene.selected or [])
 
-# Get Mask Items from selection
+
 def getSelectedMaskItems():
+    """ Get Mask Items from selection """
     return getSelectedItemsByType('mask')
 
-# Get Mesh Items from selection
+
 def getSelectedMeshItems():
+    """ Get Mesh Items from selection """
     return getSelectedItemsByType('mesh')
 
-# Get the mask where the Alpha outputs will be placed 
+
 def getTargetGroupMask():
+    """ Get the mask where the Alpha outputs will be placed """
     selection = getSelectedMaskItems()
 
     if len(selection) is not 0:
@@ -29,49 +36,55 @@ def getTargetGroupMask():
     else:
         showErrorDialog('Select a shading group mask first')
 
-# Show a simple error dialog
+
 def showErrorDialog(msg):
+    """ Show a simple error dialog """
     lx.eval('dialog.setup error')
     lx.eval('dialog.title Error')
     lx.eval('dialog.msg "%s"' % msg)
     lx.eval('dialog.open')
 
-# Put the selection in a specific item by id
+
 def selectItemById(itemId):
+    """ Put the selection in a specific item by id """
     lx.eval('select.subItem ' + itemId +
             ' set textureLayer;render;environment;light;camera;scene;replicator;bake;mediaClip;txtrLocator')
 
 
 def selectionSetsToAlphasGroupedByMeshName():
-
-    # Deselected the meshes in order to avoid select one by one in the next loop
-    # because the the available Selection sets depending of the selected meshes
+    """
+        Deselected the meshes in order to avoid select one by one in the next loop
+        because the the available Selection sets depending of the selected meshes
+    """
     for mesh in exportableMeshes:
         mesh.deselect()
 
     for mesh in exportableMeshes:
-        
+
         mesh.select()
 
         # Create Group with mesh name
         lx.eval('shader.create mask')
         lx.eval('item.name \"' + mesh.baseName + '\"')
+        lx.eval('mask.setMesh \"' + mesh.name + '\"')
 
         # Since the las created item is add ever to selection, the last item of the selection array
         # could be the last create group so we send the id of this.
-        selectionSetsToAlphas(scene.selected[-1].id)
+        selectionSetsToAlphas(scene.selected[-1].id, mesh.baseName)
         mesh.deselect()
 
         # Back selection to the target group
         selectItemById(selectedTargetMask.id)
 
 
-def selectionSetsToAlphas(targetMask=False, customGroupName=''):
+def selectionSetsToAlphas(targetMask='', customGroupName=''):
     # number of Poly Selection Sets
     num_polset = lx.eval('query layerservice polset.N ? all')
 
     for i in range(num_polset):
         polset_name = lx.eval('query layerservice polset.name ? %s' % i)
+
+        isCustomGroup = customGroupName != ''
 
         # Add group for Selection Set
         customGroupName = customGroupName if customGroupName != '' else '(all)'
@@ -81,23 +94,29 @@ def selectionSetsToAlphas(targetMask=False, customGroupName=''):
         lx.eval('mask.setPTag \"' + polset_name + '\"')
 
         # If a created group is mixed(based in a group in the mesh) then this the way to set the name of this
-        if customGroupName != '(all)':
+        if isCustomGroup:
             lx.eval('texture.name \"' + polset_name + '\"')
 
         # Add render output
         lx.eval('shader.create renderOutput')
         lx.eval('shader.setEffect shade.alpha')
-        lx.eval('item.name \"Alpha ' + polset_name + '\" renderOutput')
+
+        if isCustomGroup:
+            alphaName = slugify('Alpha ' + customGroupName + ' ' + polset_name)
+        else:
+            alphaName = slugify('Alpha ' + polset_name)
+
+        lx.eval('item.name \"%s\" renderOutput' % alphaName)
         lx.eval('item.channel renderOutput$colorspace "nuke-default:sRGBf"')
 
         # Reset selection to parent
-        targetMask = targetMask if targetMask != False else selectedTargetMask.id
+        targetMask = targetMask if targetMask != '' else selectedTargetMask.id
         lx.out(targetMask)
         selectItemById(targetMask)
 
 
 def createGroupForSelection():
-    
+
     # Create a group for meshes
     lx.eval('group.create "Alpha group" std empty')
 
@@ -113,6 +132,7 @@ def createGroupForSelection():
 
     # return group name
     return createdGroup[0].name
+
 
 # Script argument
 mode = lx.arg()
