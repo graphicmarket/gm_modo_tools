@@ -53,7 +53,7 @@ def selectItemById(itemId):
 
 def selectionSetsToAlphasGroupedByMeshName():
     """
-        Deselected the meshes in order to avoid select one by one in the next loop
+        Deselect the meshes in order to avoid select one by one in the next loop
         because the the available Selection sets depending of the selected meshes
     """
     for mesh in exportableMeshes:
@@ -107,7 +107,7 @@ def selectionSetsToAlphas(targetMask='', customGroupName=''):
             alphaName = slugify('Alpha ' + polset_name)
 
         lx.eval('item.name \"%s\" renderOutput' % alphaName)
-        lx.eval('item.channel renderOutput$colorspace "nuke-default:sRGBf"')
+        lx.eval('item.channel renderOutput$colorspace "nuke-default:sRGB"')
 
         # Reset selection to parent
         targetMask = targetMask if targetMask != '' else selectedTargetMask.id
@@ -152,4 +152,4 @@ elif mode == 'forGroup':
     # Reset selection to the target mask
     selectItemById(selectedTargetMask.id)
 
-    selectionSetsToAlphas(False, group)
+    selectionSetsToAlphas('', group)
