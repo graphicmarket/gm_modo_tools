@@ -33,6 +33,9 @@ def renameByTargetType(target):
         if isInGroup(itemType, target):
             renameObject(item, slugify(item.baseName or item.name))
 
+def restoreSelection():
+    for item in selection:
+        item.select()
 
 if arg == 'shading':
     renameByTargetType(SHADING)
@@ -45,3 +48,5 @@ if arg == 'last':
     renameObject(item, slugify(item.baseName or item.name))
 # if arg == 'all':
 #     renameByTargetType(GROUPS + SHADING + ITEMS)
+
+restoreSelection()
