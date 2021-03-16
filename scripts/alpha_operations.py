@@ -8,13 +8,13 @@ from slugify import slugify
 scene = modo.Scene()
 selectedTargetMask = []
 exportableMeshes = []
-
+globalSelection = scene.selected
 
 def getSelectedItemsByType(type):
     """ 
         Filter Selection by type 
     """
-    return filter(lambda item: item.type == type, scene.selected or [])
+    return filter(lambda item: item.type == type, globalSelection or [])
 
 
 def getSelectedMaskItems():
@@ -50,6 +50,9 @@ def selectItemById(itemId):
     lx.eval('select.subItem ' + itemId +
             ' set textureLayer;render;environment;light;camera;scene;replicator;bake;mediaClip;txtrLocator')
 
+def restoreSelection():
+    for item in globalSelection:
+        item.select()
 
 def selectionSetsToAlphasGroupedByMeshName():
     """
@@ -118,7 +121,7 @@ def selectionSetsToAlphas(targetMask='', customGroupName=''):
 def createGroupForSelection():
 
     # Create a group for meshes
-    lx.eval('group.create "Alpha group" std empty')
+    lx.eval('group.create "Group" std empty')
 
     # Select the meshes because when a is create the selection of these is lost
     for mesh in exportableMeshes:
@@ -153,3 +156,5 @@ elif mode == 'forGroup':
     selectItemById(selectedTargetMask.id)
 
     selectionSetsToAlphas('', group)
+
+restoreSelection()
