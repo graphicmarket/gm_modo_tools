@@ -105,12 +105,16 @@ def selectionSetsToAlphas(targetMask='', customGroupName=''):
         lx.eval('shader.setEffect shade.alpha')
 
         if isCustomGroup:
-            alphaName = slugify('Alpha ' + customGroupName + ' ' + polset_name)
+            alphaName = slugify(customGroupName + ' ' + polset_name)
         else:
-            alphaName = slugify('Alpha ' + polset_name)
+            alphaName = slugify(polset_name)
+
+        if alphaName.startswith('alpha') == False:
+            alphaName = 'alpha-' + alphaName
 
         lx.eval('item.name \"%s\" renderOutput' % alphaName)
         lx.eval('item.channel renderOutput$colorspace "nuke-default:sRGB"')
+        lx.eval('item.channel format JPG')
 
         # Reset selection to parent
         targetMask = targetMask if targetMask != '' else selectedTargetMask.id
